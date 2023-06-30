@@ -20,7 +20,6 @@ def main():
 
     global flag
     flag = None
-    global PEPPER
 
     # Initialize the detector ROS node and subscribe to utterance topic
     rospy.init_node("detector", anonymous=True)
@@ -46,15 +45,18 @@ def main():
             with concurrent.futures.ThreadPoolExecutor() as executor:
 
                 future_1 = executor.submit(classify_sentence, utterance, sentence_classification)
-                future_2 = executor.submit(classify_sentence_2, elements, utterance, model_reasoning)
+                future_2 = executor.submit(classify_sentence, utterance, sentence_classification_2)
+                future_3 = executor.submit(reasoning_sentence, elements, utterance, model_reasoning)
+                #Classificar si un modelo ha sido mencionado. En caso negativo, saltarse proceso de identificar modelo y pasar directamente a buscar la info en la sql
                 
                 # Retrieve results from futures.
                 classification_result = future_1.result()
-                identified_models = future_2.result()
+                classification_result_2 = future_2.result()
+                identified_models = future_3.result()
 
             print("Sentence classification: (" + str(classification_result["Detection"]) + ")" + " (" + str(identified_models["Detection"]) + ")")
 
-            if classification_result["Detection"] == "James":
+            if classification_result["Detection"] == "James" and classification_result_2["Detection"] == "Known":
 
                 if (identified_models["Output"] == "Lack Information"):
                     
@@ -85,6 +87,8 @@ def main():
                     print("James: " + str(response))
                     answer_customer(response)
 
+            elif classification_result["Detection"] == "James":
+                pub.publish(utterance)
 
             flag = None
 
@@ -100,7 +104,7 @@ def classify_sentence(utterance, classifier_function):
     classification_result = classifier_function(utterance)
     return classification_result
 
-def classify_sentence_2(elements, utterance, classifier_function):
+def reasoning_sentence(elements, utterance, classifier_function):
     classification_result = classifier_function(elements, utterance)
     return classification_result
 
@@ -142,6 +146,49 @@ def sentence_classification(utterance):
     ]
 
     result = chat(prompt_history)
+    data = extract_json(result.content)
+
+    return data
+
+
+def sentence_classification_2(utterance):
+
+    # Set OpenAI API credentials
+    openai_api_key = os.environ.get("OPENAI_API_KEY")
+
+    # Prepare prompt to send, using JSON format
+    chat = ChatOpenAI(model_name="gpt-3.5-turbo-0613", temperature=0, openai_api_key=openai_api_key)
+
+
+    system_prompt = """
+    You are a helpful assistant called "James". You are required to discern whether the Input specifically refers to all the model's names of the devices in question. 
+    If all the model's names are explicitly mentioned, your output should be "Known". If a model's name is not stated, the output should be "Unknown".
+    
+    Here there are some examples that illustrates how can you output your answer. The interactions appear in cronological order:
+
+    Input: What's the price of this device james?
+    You: {"Reasoning": "The device's name is not mentioned.", "Detection": "Unknown"}
+
+    Input: What's the price of the Sony Alpha?
+    You: {"Reasoning": "The device's name is mentioned (Sony Apha)", "Detection": "Known"}
+
+    Output the answer only in JSON format.
+    """
+
+    user_template = """
+    Input: {statement}
+    """
+
+    user_prompt_template = PromptTemplate(input_variables=["statement"], template=user_template)
+    user_prompt = user_prompt_template.format(statement = utterance)
+
+    prompt_history = [
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_prompt)
+    ]
+
+    result = chat(prompt_history)
+
     data = extract_json(result.content)
 
     return data
