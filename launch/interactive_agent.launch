@@ -32,5 +32,8 @@
     <param name="DEBUG" value="$(arg DEBUG)" />
   </node>
 
+  <node name="server" pkg="interactive_ai4hri" type="server.py" output="screen">
+    <param name="DEBUG" value="$(arg DEBUG)" />
+  </node>
 
 </launch>

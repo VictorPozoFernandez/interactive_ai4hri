@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(interactive_ai4hri)
+project(dynamic_systemai4hri)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -8,16 +8,17 @@ project(interactive_ai4hri)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  dynamic_reconfigure
   roscpp
   rospy
-  std_msgs
-  audio_common_msgs
-  dynamic_reconfigure
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-generate_dynamic_reconfigure_options(cfg/audiotranscriber_ai4hri.cfg)
+generate_dynamic_reconfigure_options(
+  dynamic_systemai4hri/cfg/systemai4hri.cfg
+  #...
+)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -49,7 +50,11 @@ generate_dynamic_reconfigure_options(cfg/audiotranscriber_ai4hri.cfg)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-
+# add_message_files(
+#   FILES
+#   Message1.msg
+#   Message2.msg
+# )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -66,7 +71,10 @@ generate_dynamic_reconfigure_options(cfg/audiotranscriber_ai4hri.cfg)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs  # Or other packages containing msgs
+# )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -99,14 +107,10 @@ generate_dynamic_reconfigure_options(cfg/audiotranscriber_ai4hri.cfg)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-  LIBRARIES interactive_ai4hri
-  CATKIN_DEPENDS dynamic_reconfigure
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+#  LIBRARIES dynamic_systemai4hri
+  CATKIN_DEPENDS dynamic_reconfigure #roscpp rospy
 #  DEPENDS system_lib
 )
-
-catkin_install_python(PROGRAMS scripts/detect_node.py scripts/agent_node.py scripts/transcribe_node.py cfg/nodes/server.py
-DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ###########
 ## Build ##
@@ -121,7 +125,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/visual_ai4hri.cpp
+#   src/${PROJECT_NAME}/dynamic_systemai4hri.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -129,10 +133,12 @@ include_directories(
 ## either from message generation or dynamic reconfigure
 # add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_dependencies(server.py ${PROJECT_NAME}_gencfg)
+
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/visual_ai4hri_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/dynamic_systemai4hri_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -196,7 +202,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_visual_ai4hri.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_dynamic_systemai4hri.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
