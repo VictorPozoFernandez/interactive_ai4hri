@@ -45,23 +45,36 @@ def main():
             with concurrent.futures.ThreadPoolExecutor() as executor:
 
                 future_1 = executor.submit(classify_sentence, utterance, sentence_classification)
-                future_2 = executor.submit(classify_sentence, utterance, sentence_classification_2)
                 future_3 = executor.submit(reasoning_sentence, elements, utterance, model_reasoning)
-                #Classificar si un modelo ha sido mencionado. En caso negativo, saltarse proceso de identificar modelo y pasar directamente a buscar la info en la sql
                 
                 # Retrieve results from futures.
                 classification_result = future_1.result()
-                classification_result_2 = future_2.result()
                 identified_models = future_3.result()
 
-            print("Sentence classification: (" + str(classification_result["Detection"]) + ")" + " (" + str(classification_result_2["Detection"]) + ")")
+            print("Sentence classification: (" + str(classification_result["Detection"]) + ")" + " (" + str(identified_models["Detection"]) + ")")
 
-            if classification_result["Detection"] == "James" and classification_result_2["Detection"] == "Known":
+            if classification_result["Detection"] == "James":
 
-                if (identified_models["Output"] == "Lack Information"):
+                if (identified_models["Output"] == "Lack Information") and identified_models["Detection"] != "None":
                     
                     identified_models = identified_models["Detection"]
                     question = question_reasoning(identified_models)
+
+                    if question != "NULL":
+                        print("")
+                        print("----------------------------------------------")
+                        print("Shopkeeper: " + question)
+
+                        answer = ask_question(question)
+                        print("")
+                        print("----------------------------------------------")
+                        print("Customer: " + answer)
+
+                        identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
+
+                elif (identified_models["Output"] == "Lack Information") and identified_models["Detection"] == "None":
+
+                    question = "Please tell me the name of the model you are asking for"
 
                     if question != "NULL":
                         print("")
@@ -86,9 +99,6 @@ def main():
                     print("----------------------------------------------")
                     print("James: " + str(response))
                     answer_customer(response)
-
-            elif classification_result["Detection"] == "James":
-                pub.publish(utterance)
 
             flag = None
 
@@ -151,49 +161,6 @@ def sentence_classification(utterance):
     return data
 
 
-def sentence_classification_2(utterance):
-
-    # Set OpenAI API credentials
-    openai_api_key = os.environ.get("OPENAI_API_KEY")
-
-    # Prepare prompt to send, using JSON format
-    chat = ChatOpenAI(model_name="gpt-3.5-turbo-0613", temperature=0, openai_api_key=openai_api_key)
-
-
-    system_prompt = """
-    You are a helpful assistant called "James". You are required to discern whether the Input specifically refers to all the model's names of the devices in question. 
-    If all the model's names are explicitly mentioned, your output should be "Known". If a model's name is not stated, the output should be "Unknown".
-    
-    Here there are some examples that illustrates how can you output your answer. The interactions appear in cronological order:
-
-    Input: What's the price of this device james?
-    You: {"Reasoning": "The device's name is not mentioned.", "Detection": "Unknown"}
-
-    Input: What's the price of the Sony Alpha?
-    You: {"Reasoning": "The device's name is mentioned (Sony Apha)", "Detection": "Known"}
-
-    Output the answer only in JSON format.
-    """
-
-    user_template = """
-    Input: {statement}
-    """
-
-    user_prompt_template = PromptTemplate(input_variables=["statement"], template=user_template)
-    user_prompt = user_prompt_template.format(statement = utterance)
-
-    prompt_history = [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=user_prompt)
-    ]
-
-    result = chat(prompt_history)
-
-    data = extract_json(result.content)
-
-    return data
-
-
 def extract_json(s):
     json_match = re.search(r'\{.*\}', s, re.DOTALL)
     if json_match:
@@ -229,11 +196,7 @@ def model_reasoning(elements, statement = ""):
 
     Customer: How much does this device cost?
     List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')]
-    You: {"Reasoning": "The Customer is not explicitely mentioning any model. All models fit this criteria ((1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')", "Detection" : "(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')", "Output": "Lack Information"}
-
-     Customer: Is the Sony Alpha A6000 cheaper than the Nikon Coolpix?
-    List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III'), (4, 'Xiaomi T11 Pro'), (5, 'Huawei airpods 4j'), (6, 'Sony Alpha a5000'), (7, 'Xiaomi Mi A3')]
-    You: {"Reasoning": "The Customer is comparing two elements ((1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'))", "Detection" : "(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000')", "Output": "(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000')"}
+    You: {"Reasoning": "The Customer is not explicitely mentioning any model. No model is detected", "Detection" : "None", "Output": "Lack Information"}
     
     Output the answer only in JSON format.
     """
