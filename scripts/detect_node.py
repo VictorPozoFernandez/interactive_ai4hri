@@ -54,7 +54,7 @@ def main():
                 classification_result_2 = future_2.result()
                 identified_models = future_3.result()
 
-            print("Sentence classification: (" + str(classification_result["Detection"]) + ")" + " (" + str(identified_models["Detection"]) + ")")
+            print("Sentence classification: (" + str(classification_result["Detection"]) + ")" + " (" + str(classification_result_2["Detection"]) + ")")
 
             if classification_result["Detection"] == "James" and classification_result_2["Detection"] == "Known":
 
