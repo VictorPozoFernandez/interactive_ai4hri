@@ -1,0 +1,37 @@
+<launch>
+
+  <!-- Arguments -->
+
+  <arg name="DEBUG" default="False" />
+  <arg name="PEPPER" default="False" />
+
+  <!-- Nodes -->
+
+  <!--<node name="record" pkg="visual_ai4hri" type="record_node.py" output="screen">
+    <param name="DEBUG" value="$(arg DEBUG)" />
+  </node>
+
+  <node name="response" pkg="visual_ai4hri" type="response_robot.py" output="screen">
+    <param name="DEBUG" value="$(arg DEBUG)" />
+    <param name="PEPPER" value="$(arg PEPPER)" />
+  </node>
+
+  <node name="camera" pkg="visual_ai4hri" type="camera_node.py" output="screen">
+    <param name="DEBUG" value="$(arg DEBUG)" />
+  </node>-->
+
+  <node name="transcribe" pkg="visual_ai4hri" type="transcribe_node.py" output="screen">
+    <param name="DEBUG" value="$(arg DEBUG)" />
+  </node>
+
+  <node name="detector" pkg="visual_ai4hri" type="detect_node.py" output="screen">
+    <param name="DEBUG" value="$(arg DEBUG)" />
+    <param name="PEPPER" value="$(arg PEPPER)" />
+  </node>
+
+  <node name="agent" pkg="visual_ai4hri" type="agent_node.py" output="screen">
+    <param name="DEBUG" value="$(arg DEBUG)" />
+  </node>
+
+
+</launch>
