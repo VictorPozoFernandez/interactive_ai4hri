@@ -25,6 +25,7 @@ def main():
     # Initialize the detector ROS node and subscribe to utterance topic
     rospy.init_node("detector", anonymous=True)
     rospy.Subscriber("/ai4hri/utterance", String, callback)
+    rospy.loginfo("Node detect_node initialized. Listening...")
 
     while not rospy.is_shutdown():
 
@@ -45,7 +46,7 @@ def main():
             with concurrent.futures.ThreadPoolExecutor() as executor:
 
                 future_1 = executor.submit(classify_sentence, utterance, sentence_classification)
-                future_2 = executor.submit(classify_sentence_2, utterance, model_reasoning)
+                future_2 = executor.submit(classify_sentence_2, elements, utterance, model_reasoning)
                 
                 # Retrieve results from futures.
                 classification_result = future_1.result()
