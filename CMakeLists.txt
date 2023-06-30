@@ -12,7 +12,6 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   audio_common_msgs
-  nao_interaction_msgs
 )
 
 ## System dependencies are found with CMake's conventions
