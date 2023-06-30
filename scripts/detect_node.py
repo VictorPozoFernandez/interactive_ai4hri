@@ -24,18 +24,6 @@ def main():
 
     # Initialize the detector ROS node and subscribe to utterance topic
     rospy.init_node("detector", anonymous=True)
-
-
-    try:
-        rospy.wait_for_message("/naoqi_driver_node/camera/front/image_raw", Image, timeout=2)
-        PEPPER = True
-        rospy.loginfo("Node detector initialized in PEPPER mode. Listening...")
-    
-    except:
-        PEPPER = False
-        rospy.loginfo("Node detector initialized. Listening...")
-
-
     rospy.Subscriber("/ai4hri/utterance", String, callback)
 
     while not rospy.is_shutdown():
@@ -44,7 +32,6 @@ def main():
 
             # Initialize publisher for the utterance_to_agent topic
             pub = rospy.Publisher('/ai4hri/utterance_to_agent', String, queue_size= 1) 
-            pub2 = rospy.Publisher('/ai4hri/take_photo', String, queue_size= 1)
 
             # Get new utterance from message and classify it
             utterance = flag
@@ -53,72 +40,24 @@ def main():
             print("Customer: " + utterance)
 
             rospy.sleep(1)
-            
-            if PEPPER == True:
-                pass
-            else:
-                pub2.publish("Take photo")
+            elements = extraction_list_products()            
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
 
                 future_1 = executor.submit(classify_sentence, utterance, sentence_classification)
-                future_2 = executor.submit(classify_sentence, utterance, sentence_classification_2)
-                future_3 = executor.submit(take_photo)
+                future_2 = executor.submit(classify_sentence_2, utterance, model_reasoning)
                 
                 # Retrieve results from futures.
                 classification_result = future_1.result()
-                classification_result_2 = future_2.result()
-                cv_image = future_3.result()
+                identified_models = future_2.result()
 
-            print("Sentence classification: (" + str(classification_result["Detection"]) + ")" + " (" + str(classification_result_2["Detection"]) + ")")
+            print("Sentence classification: (" + str(classification_result["Detection"]) + ")" + " (" + str(identified_models["Detection"]) + ")")
 
             if classification_result["Detection"] == "James":
-                   
-                while True:
+
+                if (identified_models["Output"] == "Lack Information"):
                     
-                    elements = element_identification(cv_image)
-                    print(elements)
-
-                    if isinstance(elements, list):
-                        break
-
-                    elif classification_result_2["Detection"] == "Known":
-                        elements = extraction_list_products()
-                        break
-                    
-                    else:
-                        question = "Please bring the element closer to the camera for better identification."
-                        print("")
-                        print("----------------------------------------------")
-                        print("James: " + question)
-                        
-                        answer = ask_question(question)
-                        print("")
-                        print("----------------------------------------------")
-                        print("Customer: " + answer)
-
-                        if PEPPER == True:
-                            image = rospy.wait_for_message("/naoqi_driver_node/camera/front/image_raw", Image) #Topic where Pepper publishes images of its camera.
-                        
-                        else:
-                            pub2.publish("Take photo")
-                            image = rospy.wait_for_message("/ai4hri/image", Image)
- 
-                        cv_image = bridge.imgmsg_to_cv2(image, desired_encoding='bgr8')
-                        
-                    
-                    rospy.sleep(1)
-                
-                if len(elements) == 1:
-                    identified_model = {"Output" : elements[0]}
-
-                else:
-                    identified_model = model_reasoning(elements, utterance)
-                    print(identified_model)
-
-                if (identified_model["Output"] == "Lack Information"):
-                    
-                    identified_models = identified_model["Detection"]
+                    identified_models = identified_models["Detection"]
                     question = question_reasoning(identified_models)
 
                     if question != "NULL":
@@ -131,12 +70,12 @@ def main():
                         print("----------------------------------------------")
                         print("Customer: " + answer)
 
-                        identified_model = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
+                        identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
 
 
                 # Send the utterance to the agent
-                if (identified_model["Output"] != "Lack Information"):
-                    pub.publish(utterance + ": " + str(identified_model["Output"]) + "(Product_ID, 'Model')")
+                if (identified_models["Output"] != "Lack Information"):
+                    pub.publish(utterance + ": " + str(identified_models["Output"]) + "(Product_ID, 'Model')")
 
                 else:
                     response = "I'm sorry, but I couldn't identify the device's model you are referring to."
@@ -160,26 +99,9 @@ def classify_sentence(utterance, classifier_function):
     classification_result = classifier_function(utterance)
     return classification_result
 
-
-def take_photo():
-    global PEPPER
-
-    try:
-        
-        # Wait for a single message from the topic
-
-        if PEPPER == True:
-            image = rospy.wait_for_message("/naoqi_driver_node/camera/front/image_raw", Image) #Topic where Pepper publishes images of its camera. 
-
-        else:
-            image = rospy.wait_for_message("/ai4hri/image", Image) 
-        
-        cv_image = bridge.imgmsg_to_cv2(image, desired_encoding='bgr8')
-    
-    except rospy.ROSException as e:
-        print("Timeout waiting for message from topic /ai4hri/image")
-    
-    return cv_image
+def classify_sentence_2(elements, utterance, classifier_function):
+    classification_result = classifier_function(elements, utterance)
+    return classification_result
 
 
 def sentence_classification(utterance):
@@ -224,52 +146,6 @@ def sentence_classification(utterance):
     return data
 
 
-def sentence_classification_2(utterance):
-
-    # Set OpenAI API credentials
-    openai_api_key = os.environ.get("OPENAI_API_KEY")
-
-    # Prepare prompt to send, using JSON format
-    chat = ChatOpenAI(model_name="gpt-3.5-turbo-0613", temperature=0, openai_api_key=openai_api_key)
-
-
-    system_prompt = """
-    You are a helpful assistant called "James". You are required to discern whether the Input specifically refers to all the model's names of the devices in question. 
-    If all the model's names are explicitly mentioned, your output should be "Known". If a model's name is not stated, the output should be "Unknown".
-    
-    Here there are some examples that illustrates how can you output your answer. The interactions appear in cronological order:
-
-    Input: What's the price of this device james?
-    You: {"Reasoning": "The device's name is not mentioned.", "Detection": "Unknown"}
-
-    Input: What's the price of the Sony Alpha?
-    You: {"Reasoning": "The device's name is mentioned (Sony Apha)", "Detection": "Known"}
-
-    Input: Could you tell me the difference between this camera and the Sony Alpha?
-    You: {"Reasoning": Two elements are being compared. One of the device's names is mentioned (Sony Alpha), but the other is not ("this camera" model is Unknown)", "Detection": "Unknown"}
-
-    Output the answer only in JSON format.
-    """
-
-    user_template = """
-    Input: {statement}
-    """
-
-    user_prompt_template = PromptTemplate(input_variables=["statement"], template=user_template)
-    user_prompt = user_prompt_template.format(statement = utterance)
-
-    prompt_history = [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=user_prompt)
-    ]
-
-    result = chat(prompt_history)
-
-    data = extract_json(result.content)
-
-    return data
-
-
 def extract_json(s):
     json_match = re.search(r'\{.*\}', s, re.DOTALL)
     if json_match:
@@ -282,34 +158,6 @@ def extract_json(s):
     else:
         print("No JSON found in the string")
         return {"Detection": "null", "Model": "null", "Output" : "null",}
-    
-
-def element_identification(image):
-
-    # Save the frame as a .png file
-    cv2.imwrite('photo.png', image)
-
-    # Open the image file specified by 'image_path' in binary read mode.
-    with open("photo.png", "rb") as image_file:
-
-        url = "http://" + str(os.environ.get("CLOUD_IP")) + ":80/annotate"
-        files = {"photo": image_file}
-        text_prompt = "the object being presented"
-
-        # Send a POST request to the specified URL with the image file as the payload.
-        response = requests.post(url, params={"text_prompt": text_prompt}, files=files)
-
-        # Check if the response status code is 200, indicating a successful request.
-        if response.status_code == 200:
-            # Convert result from bytes to list
-            response_string = response.content.decode('utf-8')
-            response_list = json.loads(response_string)
-            return response_list
-        
-        # If the response status code is not 200, handle the error.
-        else:
-            # Return an error message with the status code.
-            return f"Element not identified"
 
 
 def model_reasoning(elements, statement = ""):
@@ -335,6 +183,10 @@ def model_reasoning(elements, statement = ""):
     List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')]
     You: {"Reasoning": "The Customer is not explicitely mentioning any model. All models fit this criteria ((1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')", "Detection" : "(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')", "Output": "Lack Information"}
 
+     Customer: Is the Sony Alpha A6000 cheaper than the Nikon Coolpix?
+    List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III'), (4, 'Xiaomi T11 Pro'), (5, 'Huawei airpods 4j'), (6, 'Sony Alpha a5000'), (7, 'Xiaomi Mi A3')]
+    You: {"Reasoning": "The Customer is comparing two elements ((1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'))", "Detection" : "(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000')", "Output": "(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000')"}
+    
     Output the answer only in JSON format.
     """
 
@@ -374,9 +226,6 @@ def question_reasoning(identified_models):
     except Exception as e:
         print(e)
         return "NULL"
-
-
-
 
 
 def extraction_list_products():

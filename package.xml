@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>visual_ai4hri</name>
+  <name>interactive_ai4hri</name>
   <version>0.0.0</version>
-  <description>The visual_ai4hri package</description>
+  <description>The interactive_ai4hri package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
