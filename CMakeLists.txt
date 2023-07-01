@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-generate_dynamic_reconfigure_options(cfg/audiotranscriber_ai4hri.cfg)
+generate_dynamic_reconfigure_options(cfg/audiotranscriber_ai4hri.cfg cfg/audioresponse_ai4hri.cfg)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
