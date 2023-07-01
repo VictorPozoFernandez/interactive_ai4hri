@@ -17,6 +17,7 @@ def main():
     rospy.init_node("agent", anonymous=True)
     rospy.loginfo("Node agent initialized. Listening...")
     rospy.Subscriber("/ai4hri/utterance_to_agent", String, callback)
+    srv = Server(audioresponse_ai4hriConfig, callback2)
     
     rospy.spin()
 
