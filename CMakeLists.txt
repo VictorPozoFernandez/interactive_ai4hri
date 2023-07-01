@@ -105,7 +105,7 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
-catkin_install_python(PROGRAMS scripts/detect_node.py scripts/agent_node.py scripts/transcribe_node.py cfg/nodes/server.py
+catkin_install_python(PROGRAMS scripts/detect_node.py scripts/agent_node.py scripts/transcribe_node.py
 DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ###########
