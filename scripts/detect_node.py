@@ -37,6 +37,7 @@ def main():
         PEPPER = False
         rospy.loginfo("Node detector initialized. Listening...")
     
+    print("")
     if visual_mode == None:
         print("Visual mode OFF")
     else:
@@ -83,7 +84,6 @@ def main():
                         print("Customer: " + answer)
 
                         identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
-                        print(identified_models)
 
                 elif (identified_models["Output"] == "Lack Information") and identified_models["Detection"] == "None" and current_model["Output"] != "":
 
