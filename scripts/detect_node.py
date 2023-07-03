@@ -251,7 +251,7 @@ def model_reasoning(elements, statement = ""):
 
     Customer: How much does this Nikon Coolpix camera cost?
     List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III'), (4, 'Xiaomi T11 Pro'), (5, 'Huawei airpods 4j'), (6, 'Sony Alpha a5000'), (7, 'Xiaomi Mi A3')]
-    You: {"Reasoning": "The Customer is talking about a Sony Alpha model. There is only one model that fit this criteria ((1, 'Nikon Coolpix S2800'))", "Detection" : "(1, 'Nikon Coolpix S2800')", "Output": "(1, 'Nikon Coolpix S2800')"}
+    You: {"Reasoning": "The Customer is talking about a Nikon Coolpix model. There is only one model that fit this criteria ((1, 'Nikon Coolpix S2800'))", "Detection" : "(1, 'Nikon Coolpix S2800')", "Output": "(1, 'Nikon Coolpix S2800')"}
 
     Customer: How much does this device cost?
     List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')]
