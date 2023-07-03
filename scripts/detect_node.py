@@ -136,6 +136,7 @@ def main():
                     print(elements)
 
                     if isinstance(elements, list):
+                        detection = True
                         break
 
                     elif classification_result["Detection"] != "None":
@@ -168,8 +169,9 @@ def main():
                     
                     rospy.sleep(1)
                 
-                if classification_result["Detection"] == "None" and current_model["Output"] != "":
+                if classification_result["Detection"] == "None" and current_model["Output"] != "" and detection == False:
                     identified_models = current_model
+                    detection=False
                 
                 elif len(elements) == 1:
                     identified_models = {"Output" : elements[0]}
