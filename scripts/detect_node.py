@@ -16,6 +16,7 @@ from sensor_msgs.msg import Image
 
 bridge = CvBridge()
 visual_mode = os.environ.get("CLOUD_IP")
+print("VISUAL_MODE: " +str(visual_mode))
 
 def main():
 
@@ -113,6 +114,7 @@ def main():
                 print("Customer: " + utterance)
 
                 rospy.sleep(1)
+                elements = extraction_list_products()
                 
                 if PEPPER == True:
                     pass
