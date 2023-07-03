@@ -16,7 +16,6 @@ from sensor_msgs.msg import Image
 
 bridge = CvBridge()
 visual_mode = os.environ.get("CLOUD_IP")
-print("VISUAL_MODE: " +str(visual_mode))
 
 def main():
 
@@ -37,7 +36,11 @@ def main():
     except:
         PEPPER = False
         rospy.loginfo("Node detector initialized. Listening...")
-
+    
+    if visual_mode == None:
+        print("Visual mode OFF")
+    else:
+        print("Visual mode ON")
 
     while not rospy.is_shutdown():
 
@@ -192,6 +195,7 @@ def main():
             # Send the utterance to the agent
             if (identified_models["Output"] != "Lack Information"):
                 pub.publish(utterance + ": " + str(identified_models["Output"]) + "(Product_ID, 'Model')")
+                current_model = identified_models
 
             else:
                 response = "I'm sorry, but I couldn't identify the device's model you are referring to."
