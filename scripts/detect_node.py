@@ -136,14 +136,10 @@ def main():
                     print(elements)
 
                     if isinstance(elements, list):
-                        detection = True
                         break
 
                     elif classification_result["Detection"] != "None":
                         elements = extraction_list_products()
-                        break
-
-                    elif classification_result["Detection"] == "None" and current_model["Output"] != "":
                         break
                     
                     else:
@@ -169,11 +165,7 @@ def main():
                     
                     rospy.sleep(1)
                 
-                if classification_result["Detection"] == "None" and current_model["Output"] != "" and detection == False:
-                    identified_models = current_model
-                    detection=False
-                
-                elif len(elements) == 1:
+                if len(elements) == 1:
                     identified_models = {"Output" : elements[0]}
 
                 else:
@@ -200,7 +192,6 @@ def main():
             # Send the utterance to the agent
             if (identified_models["Output"] != "Lack Information"):
                 pub.publish(utterance + ": " + str(identified_models["Output"]) + "(Product_ID, 'Model')")
-                current_model = identified_models
 
             else:
                 response = "I'm sorry, but I couldn't identify the device's model you are referring to."
@@ -218,10 +209,6 @@ def callback(msg):
     global flag
     flag = msg.data
 
-    
-def classify_sentence(utterance, classifier_function):
-    classification_result = classifier_function(utterance)
-    return classification_result
 
 def reasoning_sentence(elements, utterance, classifier_function):
     classification_result = classifier_function(elements, utterance)
