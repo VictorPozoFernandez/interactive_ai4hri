@@ -83,6 +83,7 @@ def main():
                         print("Customer: " + answer)
 
                         identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
+                        print(identified_models)
 
                 elif (identified_models["Output"] == "Lack Information") and identified_models["Detection"] == "None" and current_model["Output"] != "":
 
