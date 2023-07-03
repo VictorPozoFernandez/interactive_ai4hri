@@ -41,61 +41,55 @@ def main():
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
 
-                future_1 = executor.submit(classify_sentence, utterance, sentence_classification)
-                future_3 = executor.submit(reasoning_sentence, elements, utterance, model_reasoning)
+                future = executor.submit(reasoning_sentence, elements, utterance, model_reasoning)
                 
                 # Retrieve results from futures.
-                classification_result = future_1.result()
-                identified_models = future_3.result()
+                identified_models = future.result()
 
-            print("Sentence classification: (" + str(classification_result["Detection"]) + ")" + " (" + str(identified_models["Detection"]) + ")")
+            if (identified_models["Output"] == "Lack Information") and identified_models["Detection"] != "None":
+                
+                identified_models = identified_models["Detection"]
+                question = question_reasoning(identified_models)
 
-            if classification_result["Detection"] == "James":
-
-                if (identified_models["Output"] == "Lack Information") and identified_models["Detection"] != "None":
-                    
-                    identified_models = identified_models["Detection"]
-                    question = question_reasoning(identified_models)
-
-                    if question != "NULL":
-                        print("")
-                        print("----------------------------------------------")
-                        print("Shopkeeper: " + question)
-
-                        answer = ask_question(question)
-                        print("")
-                        print("----------------------------------------------")
-                        print("Customer: " + answer)
-
-                        identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
-
-                elif (identified_models["Output"] == "Lack Information") and identified_models["Detection"] == "None":
-
-                    question = "Please tell me the name of the model you are asking for"
-
-                    if question != "NULL":
-                        print("")
-                        print("----------------------------------------------")
-                        print("Shopkeeper: " + question)
-
-                        answer = ask_question(question)
-                        print("")
-                        print("----------------------------------------------")
-                        print("Customer: " + answer)
-
-                        identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
-
-
-                # Send the utterance to the agent
-                if (identified_models["Output"] != "Lack Information"):
-                    pub.publish(utterance + ": " + str(identified_models["Output"]) + "(Product_ID, 'Model')")
-
-                else:
-                    response = "I'm sorry, but I couldn't identify the device's model you are referring to."
+                if question != "NULL":
                     print("")
                     print("----------------------------------------------")
-                    print("James: " + str(response))
-                    answer_customer(response)
+                    print("Shopkeeper: " + question)
+
+                    answer = ask_question(question)
+                    print("")
+                    print("----------------------------------------------")
+                    print("Customer: " + answer)
+
+                    identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
+
+            elif (identified_models["Output"] == "Lack Information") and identified_models["Detection"] == "None":
+
+                question = "Please tell me the name of the model you are asking for"
+
+                if question != "NULL":
+                    print("")
+                    print("----------------------------------------------")
+                    print("Shopkeeper: " + question)
+
+                    answer = ask_question(question)
+                    print("")
+                    print("----------------------------------------------")
+                    print("Customer: " + answer)
+
+                    identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
+
+
+            # Send the utterance to the agent
+            if (identified_models["Output"] != "Lack Information"):
+                pub.publish(utterance + ": " + str(identified_models["Output"]) + "(Product_ID, 'Model')")
+
+            else:
+                response = "I'm sorry, but I couldn't identify the device's model you are referring to."
+                print("")
+                print("----------------------------------------------")
+                print("Shopkeeper: " + str(response))
+                answer_customer(response)
 
             flag = None
 
@@ -114,48 +108,6 @@ def classify_sentence(utterance, classifier_function):
 def reasoning_sentence(elements, utterance, classifier_function):
     classification_result = classifier_function(elements, utterance)
     return classification_result
-
-
-def sentence_classification(utterance):
-
-    # Set OpenAI API credentials
-    openai_api_key = os.environ.get("OPENAI_API_KEY")
-
-    # Prepare prompt to send, using JSON format
-    chat = ChatOpenAI(model_name="gpt-3.5-turbo-0613", temperature=0, openai_api_key=openai_api_key)
-
-
-    system_prompt = """
-    You are a helpful assistant called "James". If the Input contains a question directly to you, output "James". Otherwise, output "null".
-    Beware that the name "James" may be misspelled during the transcription form audio to text, but even then you still have to identify that the question is directed to you. Examples of misspelling: "gems", "jaims". 
-    
-    Here there are some examples that illustrates how can you output your answer. The interactions appear in cronological order:
-
-    Input: What's the price of this device james?
-    You: {"Detection": "James"}
-
-    Input: What's the price of this device?
-    You: {"Detection": "null"}
-
-    Output the answer only in JSON format.
-    """
-
-    user_template = """
-    Input: {statement}
-    """
-
-    user_prompt_template = PromptTemplate(input_variables=["statement"], template=user_template)
-    user_prompt = user_prompt_template.format(statement = utterance)
-
-    prompt_history = [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=user_prompt)
-    ]
-
-    result = chat(prompt_history)
-    data = extract_json(result.content)
-
-    return data
 
 
 def extract_json(s):
@@ -179,7 +131,7 @@ def model_reasoning(elements, statement = ""):
     chat = ChatOpenAI(model_name="gpt-3.5-turbo-0613", temperature=0, openai_api_key=openai_api_key)
 
     system_template = """
-    You are a helpful assistant called "James" that helps to detect which device model and Product_ID is the customer talking about using the List as reference. If two or more models are detected, output "Lack Information". Be concise, don't give explainations.
+    You are a helpful assistant that helps to detect which device model and Product_ID is the customer talking about using the List as reference. If two or more models are detected, output "Lack Information". Be concise, don't give explainations.
     
     Here there are some examples that illustrates how can you output your answer. The interactions appear in cronological order:
 
