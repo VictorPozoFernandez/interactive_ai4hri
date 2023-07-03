@@ -10,80 +10,188 @@ import sqlite3
 import re
 import concurrent.futures
 import ast
+import cv2
+import requests
+from sensor_msgs.msg import Image
 
 bridge = CvBridge()
+visual_mode = os.environ.get("CLOUD_IP")
 
 def main():
 
     global flag
     flag = None
     current_model= {"Reasoning": "", "Detection" : "", "Output": ""}
+    global PEPPER
 
     # Initialize the detector ROS node and subscribe to utterance topic
     rospy.init_node("detector", anonymous=True)
     rospy.Subscriber("/ai4hri/utterance", String, callback)
-    rospy.loginfo("Node detect_node initialized. Listening...")
+
+    try:
+        rospy.wait_for_message("/naoqi_driver_node/camera/front/image_raw", Image, timeout=2)
+        PEPPER = True
+        rospy.loginfo("Node detector initialized in PEPPER mode. Listening...")
+    
+    except:
+        PEPPER = False
+        rospy.loginfo("Node detector initialized. Listening...")
+
 
     while not rospy.is_shutdown():
 
         if flag != None:
 
-            # Initialize publisher for the utterance_to_agent topic
-            pub = rospy.Publisher('/ai4hri/utterance_to_agent', String, queue_size= 1) 
+            if visual_mode == None:
 
-            # Get new utterance from message and classify it
-            utterance = flag
-            print("")
-            print("----------------------------------------------")
-            print("Customer: " + utterance)
+                # Initialize publisher for the utterance_to_agent topic
+                pub = rospy.Publisher('/ai4hri/utterance_to_agent', String, queue_size= 1) 
 
-            rospy.sleep(1)
-            elements = extraction_list_products()            
+                # Get new utterance from message and classify it
+                utterance = flag
+                print("")
+                print("----------------------------------------------")
+                print("Customer: " + utterance)
 
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+                rospy.sleep(1)
+                elements = extraction_list_products()            
 
-                future = executor.submit(reasoning_sentence, elements, utterance, model_reasoning)
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+
+                    future = executor.submit(reasoning_sentence, elements, utterance, model_reasoning)
+                    
+                    # Retrieve results from futures.
+                    identified_models = future.result()
+
+                if (identified_models["Output"] == "Lack Information") and identified_models["Detection"] != "None":
+                    
+                    identified_models = identified_models["Detection"]
+                    question = question_reasoning(identified_models)
+
+                    if question != "NULL":
+                        print("")
+                        print("----------------------------------------------")
+                        print("Shopkeeper: " + question)
+
+                        answer = ask_question(question)
+                        print("")
+                        print("----------------------------------------------")
+                        print("Customer: " + answer)
+
+                        identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
+
+                elif (identified_models["Output"] == "Lack Information") and identified_models["Detection"] == "None" and current_model["Output"] != "":
+
+                    identified_models = current_model
                 
-                # Retrieve results from futures.
-                identified_models = future.result()
+                elif (identified_models["Output"] == "Lack Information") and identified_models["Detection"] == "None":
 
-            if (identified_models["Output"] == "Lack Information") and identified_models["Detection"] != "None":
+                    question = "Please tell me the name of the model you are asking for"
+
+                    if question != "NULL":
+                        print("")
+                        print("----------------------------------------------")
+                        print("Shopkeeper: " + question)
+
+                        answer = ask_question(question)
+                        print("")
+                        print("----------------------------------------------")
+                        print("Customer: " + answer)
+
+                        identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
+
+            if visual_mode != None:
+
+                # Initialize publisher for the utterance_to_agent topic
+                pub = rospy.Publisher('/ai4hri/utterance_to_agent', String, queue_size= 1) 
+                pub2 = rospy.Publisher('/ai4hri/take_photo', String, queue_size= 1)
+
+                # Get new utterance from message and classify it
+                utterance = flag
+                print("")
+                print("----------------------------------------------")
+                print("Customer: " + utterance)
+
+                rospy.sleep(1)
                 
-                identified_models = identified_models["Detection"]
-                question = question_reasoning(identified_models)
+                if PEPPER == True:
+                    pass
+                else:
+                    pub2.publish("Take photo")
 
-                if question != "NULL":
-                    print("")
-                    print("----------------------------------------------")
-                    print("Shopkeeper: " + question)
+                with concurrent.futures.ThreadPoolExecutor() as executor:
 
-                    answer = ask_question(question)
-                    print("")
-                    print("----------------------------------------------")
-                    print("Customer: " + answer)
+                    future = executor.submit(reasoning_sentence, elements, utterance, model_reasoning)
+                    future_2 = executor.submit(take_photo)
+                    
+                    # Retrieve results from futures.
+                    classification_result = future.result()
+                    cv_image = future_2.result()
+                    
+                while True:
+                    
+                    elements = element_identification(cv_image)
+                    print(elements)
 
-                    identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
+                    if isinstance(elements, list):
+                        break
 
-            elif (identified_models["Output"] == "Lack Information") and identified_models["Detection"] == "None" and current_model["Output"] != "":
+                    elif classification_result["Detection"] != "None":
+                        elements = extraction_list_products()
+                        break
 
-                identified_models = current_model
-            
-            elif (identified_models["Output"] == "Lack Information") and identified_models["Detection"] == "None":
+                    elif classification_result["Detection"] == "None" and current_model["Output"] != "":
+                        break
+                    
+                    else:
+                        question = "Please bring the element closer to the camera for better identification."
+                        print("")
+                        print("----------------------------------------------")
+                        print("James: " + question)
+                        
+                        answer = ask_question(question)
+                        print("")
+                        print("----------------------------------------------")
+                        print("Customer: " + answer)
 
-                question = "Please tell me the name of the model you are asking for"
+                        if PEPPER == True:
+                            image = rospy.wait_for_message("/naoqi_driver_node/camera/front/image_raw", Image) #Topic where Pepper publishes images of its camera.
+                        
+                        else:
+                            pub2.publish("Take photo")
+                            image = rospy.wait_for_message("/ai4hri/image", Image)
 
-                if question != "NULL":
-                    print("")
-                    print("----------------------------------------------")
-                    print("Shopkeeper: " + question)
+                        cv_image = bridge.imgmsg_to_cv2(image, desired_encoding='bgr8')
+                        
+                    
+                    rospy.sleep(1)
+                
+                if classification_result["Detection"] == "None" and current_model["Output"] != "":
+                    identified_model = current_model
+                
+                elif len(elements) == 1:
+                    identified_model = {"Output" : elements[0]}
 
-                    answer = ask_question(question)
-                    print("")
-                    print("----------------------------------------------")
-                    print("Customer: " + answer)
+                else:
+                    identified_model = model_reasoning(elements, utterance)
+                    print(identified_model)
 
-                    identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
+                if (identified_model["Output"] == "Lack Information"):
+                    
+                    identified_models = identified_model["Detection"]
+                    question = question_reasoning(identified_models)
 
+                    if question != "NULL":
+                        print("")
+                        print("----------------------------------------------")
+                        print("Shopkeeper: " + question)
+
+                        answer = ask_question(question)
+                        print("")
+                        print("----------------------------------------------")
+                        print("Customer: " + answer)
+
+                        identified_model = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
 
             # Send the utterance to the agent
             if (identified_models["Output"] != "Lack Information"):
@@ -128,8 +236,6 @@ def extract_json(s):
     else:
         print("No JSON found in the string")
         return {"Detection": "null", "Model": "null", "Output" : "null",}
-
-
 
 
 def model_reasoning(elements, statement = ""):
@@ -248,6 +354,53 @@ def answer_customer(question):
     rospy.sleep(1)
 
 
+def take_photo():
+    global PEPPER
+
+    try:
+        
+        # Wait for a single message from the topic
+
+        if PEPPER == True:
+            image = rospy.wait_for_message("/naoqi_driver_node/camera/front/image_raw", Image) #Topic where Pepper publishes images of its camera. 
+
+        else:
+            image = rospy.wait_for_message("/ai4hri/image", Image) 
+        
+        cv_image = bridge.imgmsg_to_cv2(image, desired_encoding='bgr8')
+    
+    except rospy.ROSException as e:
+        print("Timeout waiting for message from topic /ai4hri/image")
+    
+    return cv_image
+
+
+def element_identification(image):
+
+    # Save the frame as a .png file
+    cv2.imwrite('photo.png', image)
+
+    # Open the image file specified by 'image_path' in binary read mode.
+    with open("photo.png", "rb") as image_file:
+
+        url = "http://" + str(os.environ.get("CLOUD_IP")) + ":80/annotate"
+        files = {"photo": image_file}
+        text_prompt = "the object being presented"
+
+        # Send a POST request to the specified URL with the image file as the payload.
+        response = requests.post(url, params={"text_prompt": text_prompt}, files=files)
+
+        # Check if the response status code is 200, indicating a successful request.
+        if response.status_code == 200:
+            # Convert result from bytes to list
+            response_string = response.content.decode('utf-8')
+            response_list = json.loads(response_string)
+            return response_list
+        
+        # If the response status code is not 200, handle the error.
+        else:
+            # Return an error message with the status code.
+            return f"Element not identified"
 
 if __name__ == '__main__':
 
