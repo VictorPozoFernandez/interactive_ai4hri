@@ -7,8 +7,6 @@ from langchain.chains import SQLDatabaseChain
 from std_msgs.msg import String
 import os
 import rospy
-from dynamic_reconfigure.server import Server
-from interactive_ai4hri.cfg import audioresponse_ai4hriConfig
 
 
 def main():
@@ -17,7 +15,6 @@ def main():
     rospy.init_node("agent", anonymous=True)
     rospy.loginfo("Node agent initialized. Listening...")
     rospy.Subscriber("/ai4hri/utterance_to_agent", String, callback)
-    srv = Server(audioresponse_ai4hriConfig, callback2)
     
     rospy.spin()
 
@@ -26,10 +23,9 @@ def callback(msg):
 
     # Get new utterance from message and classify it
     utterance = msg.data
-    global language
     
     try:
-        result = activate_agent(utterance + language)
+        result = activate_agent(utterance)
         
     except Exception as e:
         e = str(e)
@@ -55,19 +51,6 @@ def callback(msg):
     rospy.sleep(1)
     pub3.publish(result)
     rospy.sleep(1)
-
-
-def callback2(config, level):
-
-    rospy.loginfo("""Reconfigure Request: {language_str_param} """.format(**config))
-    
-    global language
-    if config.language_str_param == "en":
-        language = ""
-    elif config.language_str_param == "es":
-        language = "Responde a la pregunta en Español"
-
-    return config
 
 
 def activate_agent(utterance):

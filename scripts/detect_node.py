@@ -5,12 +5,9 @@ from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage, SystemMessage
 from langchain.prompts import PromptTemplate
 from cv_bridge import CvBridge
-import cv2
-import requests
 import json
 import sqlite3
 import re
-from sensor_msgs.msg import Image
 import concurrent.futures
 import ast
 
