@@ -17,6 +17,7 @@ def main():
 
     global flag
     flag = None
+    current_model= {"Reasoning": "", "Detection" : "", "Output": ""}
 
     # Initialize the detector ROS node and subscribe to utterance topic
     rospy.init_node("detector", anonymous=True)
@@ -63,6 +64,10 @@ def main():
 
                     identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
 
+            elif (identified_models["Output"] == "Lack Information") and identified_models["Detection"] == "None" and current_model["Output"] != "":
+
+                identified_models = current_model
+            
             elif (identified_models["Output"] == "Lack Information") and identified_models["Detection"] == "None":
 
                 question = "Please tell me the name of the model you are asking for"
@@ -83,6 +88,7 @@ def main():
             # Send the utterance to the agent
             if (identified_models["Output"] != "Lack Information"):
                 pub.publish(utterance + ": " + str(identified_models["Output"]) + "(Product_ID, 'Model')")
+                current_model = identified_models
 
             else:
                 response = "I'm sorry, but I couldn't identify the device's model you are referring to."
@@ -122,6 +128,8 @@ def extract_json(s):
     else:
         print("No JSON found in the string")
         return {"Detection": "null", "Model": "null", "Output" : "null",}
+
+
 
 
 def model_reasoning(elements, statement = ""):
