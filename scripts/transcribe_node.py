@@ -24,21 +24,16 @@ def main():
 
 
 def callback(msg):
-    global language
     audio_data = msg.data
 
     # Save the audio_data as a temporary file
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
         temp_file.write(audio_data)
         temp_file_name = temp_file.name
-
-    if language == None:
-        language = "en" #Change language (english = "en", spanish = "es", french = "fr", german = "de", italian = "it", japanese = "ja")  
-
-    
+ 
     # Transcribe the audio file
     with open(temp_file_name, "rb") as audio_file:
-        result = openai.Audio.transcribe("whisper-1", audio_file, language=language)          
+        result = openai.Audio.transcribe("whisper-1", audio_file, language="en")          
 
     utterance = result["text"]
     
