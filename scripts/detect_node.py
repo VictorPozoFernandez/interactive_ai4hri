@@ -169,18 +169,18 @@ def main():
                     rospy.sleep(1)
                 
                 if classification_result["Detection"] == "None" and current_model["Output"] != "":
-                    identified_model = current_model
+                    identified_models = current_model
                 
                 elif len(elements) == 1:
-                    identified_model = {"Output" : elements[0]}
+                    identified_models = {"Output" : elements[0]}
 
                 else:
-                    identified_model = model_reasoning(elements, utterance)
-                    print(identified_model)
+                    identified_models = model_reasoning(elements, utterance)
+                    print(identified_models)
 
-                if (identified_model["Output"] == "Lack Information"):
+                if (identified_models["Output"] == "Lack Information"):
                     
-                    identified_models = identified_model["Detection"]
+                    identified_models = identified_models["Detection"]
                     question = question_reasoning(identified_models)
 
                     if question != "NULL":
@@ -193,7 +193,7 @@ def main():
                         print("----------------------------------------------")
                         print("Customer: " + answer)
 
-                        identified_model = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
+                        identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
 
             # Send the utterance to the agent
             if (identified_models["Output"] != "Lack Information"):
