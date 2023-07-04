@@ -150,7 +150,7 @@ def main():
                         question = "Please bring the element closer to the camera for better identification."
                         print("")
                         print("----------------------------------------------")
-                        print("James: " + question)
+                        print("Shopkeeper: " + question)
                         
                         answer = ask_question(question)
                         print("")

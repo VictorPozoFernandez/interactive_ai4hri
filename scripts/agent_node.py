@@ -44,7 +44,7 @@ def callback(msg):
 
     print("")
     print("----------------------------------------------")
-    print("James: " + result)
+    print("Shopkeeper: " + result)
 
     #Answer the question
     pub3 = rospy.Publisher('/ai4hri/response_robot', String, queue_size= 1)
