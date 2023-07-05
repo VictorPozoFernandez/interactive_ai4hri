@@ -132,11 +132,10 @@ def main():
                     
                     # Retrieve results from futures.
                     classification_result = future.result()
-                    cv_image = future_2.result()
+                    elements = future_2.result()
                     
                 while True:
                     
-                    elements = element_identification(cv_image)
                     print(elements)
 
                     if isinstance(elements, list):
@@ -412,9 +411,11 @@ def take_photo():
         cv_image = bridge.imgmsg_to_cv2(image, desired_encoding='bgr8')
     
     except rospy.ROSException as e:
-        print("Timeout waiting for message from topic /ai4hri/image")
+        print("Timeout waiting for an image")
     
-    return cv_image
+    elements = element_identification(cv_image)
+    
+    return elements
 
 
 def element_identification(image):
