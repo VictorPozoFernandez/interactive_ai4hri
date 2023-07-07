@@ -54,7 +54,7 @@ def callback(msg):
 
 
 def activate_agent(utterance):
-    llm = ChatOpenAI(model_name="gpt-3.5-turbo-0613", temperature=0.0, openai_api_key=os.environ.get("OPENAI_API_KEY"))
+    llm = ChatOpenAI(model_name="gpt-4", temperature=0.0, openai_api_key=os.environ.get("OPENAI_API_KEY"))
     tools = [SearchTool()]
 
     agent = initialize_agent(
@@ -66,7 +66,7 @@ def activate_agent(utterance):
         early_stopping_method="generate")
 
 
-    result = agent(utterance)
+    result = agent(utterance + "(Search in the SQL database using only 1 query)")
 
     return result["output"]
 

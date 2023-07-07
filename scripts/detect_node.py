@@ -254,7 +254,7 @@ def model_reasoning(elements, statement = ""):
 
     Customer: How much does this device cost?
     List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')]
-    You: {"Reasoning": "The Customer is not explicitely mentioning any model. No model is detected", "Detection" : "None", "Output": "Lack Information"}
+    You: {"Reasoning": "The Customer is not explicitely mentioning any model. No model is detected", "Detection" : "None", "Output": "None"}
 
     Customer: Is the Sony Alpha a6000 more expensive than the Nikon Coolpix?
     List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')]
