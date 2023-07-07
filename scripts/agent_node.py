@@ -82,7 +82,7 @@ class SearchTool(BaseTool):
         file_path = os.path.join(parent_dir, 'Camera_Store.db')
 
         db = SQLDatabase.from_uri("sqlite:////" + file_path)
-        llm = ChatOpenAI(model_name="gpt-3.5-turbo-0613", temperature=0.0, openai_api_key=os.environ.get("OPENAI_API_KEY"))
+        llm = ChatOpenAI(model_name="gpt-4", temperature=0.0, openai_api_key=os.environ.get("OPENAI_API_KEY"))
 
         db_chain = SQLDatabaseChain(llm=llm, database=db, verbose=True, return_intermediate_steps=True)
         db_result = db_chain(search)
