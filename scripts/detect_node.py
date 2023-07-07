@@ -89,7 +89,7 @@ def main():
 
                     identified_models = current_model
                 
-                elif (identified_models["Output"] == "Lack Information") and identified_models["Detection"] == "None":
+                '''elif (identified_models["Output"] == "Lack Information") and identified_models["Detection"] == "None":
 
                     question = "Please tell me the name of the model you are asking for"
 
@@ -103,7 +103,7 @@ def main():
                         print("----------------------------------------------")
                         print("Customer: " + answer)
 
-                        identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)
+                        identified_models = model_reasoning(elements, "Question: " + question + "Answer: " + answer)'''
 
             if visual_mode != None:
 
@@ -237,7 +237,7 @@ def model_reasoning(elements, statement = ""):
 
     # Set OpenAI API credentials
     openai_api_key = os.environ.get("OPENAI_API_KEY")
-    chat = ChatOpenAI(model_name="gpt-3.5-turbo-0613", temperature=0, openai_api_key=openai_api_key)
+    chat = ChatOpenAI(model_name="gpt-4", temperature=0, openai_api_key=openai_api_key)
 
     system_template = """
     You are a helpful assistant that helps to detect which device model and Product_ID is the customer talking about using the List as reference. If two or more models are detected, output "Lack Information". Be concise, don't give explainations.
@@ -255,6 +255,10 @@ def model_reasoning(elements, statement = ""):
     Customer: How much does this device cost?
     List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')]
     You: {"Reasoning": "The Customer is not explicitely mentioning any model. No model is detected", "Detection" : "None", "Output": "Lack Information"}
+
+    Customer: Is the Sony Alpha a6000 more expensive than the Nikon Coolpix?
+    List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')]
+    You: {"Reasoning": "The Customer is comparing two cameras, "Detection" : "(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000')", "Output": "(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000')"}
     
     Output the answer only in JSON format.
     """
