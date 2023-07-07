@@ -62,11 +62,11 @@ def activate_agent(utterance):
         tools=tools, 
         llm=llm,
         verbose=True,
-        max_iterations=1,
+        max_iterations=2,
         early_stopping_method="generate")
 
 
-    result = agent(utterance + "(Search in the SQL database using only 1 query)")
+    result = agent(utterance)
 
     return result["output"]
 
