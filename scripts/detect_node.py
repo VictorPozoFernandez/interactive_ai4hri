@@ -157,7 +157,7 @@ def main():
                         print("Customer: " + answer)
 
                         if PEPPER == True:
-                            image = rospy.wait_for_message("/naoqi_driver_node/camera/front/image_raw", Image) #Topic where Pepper publishes images of its camera.
+                            image = rospy.wait_for_message("/naoqi_driver_node/camera/front/image_raw", Image) 
                         
                         else:
                             pub2.publish("Take photo")
@@ -240,21 +240,28 @@ def model_reasoning(elements, statement = ""):
     chat = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0, openai_api_key=openai_api_key)
 
     system_template = """
-    You are a helpful assistant that helps to detect which device model and Product_ID is the customer talking about using the List as reference. If two or more models are detected, output "Lack Information". Be concise, don't give explainations.
+    You are a helpful assistant that helps to detect which device model and Product_ID is the customer talking about using 
+    the List as reference. If two or more models are detected, output "Lack Information". Be concise, don't give explainations.
     
     Here there are some examples that illustrates how can you output your answer. The interactions appear in cronological order:
 
     Customer: How much does this Sony Alpha camera cost?
     List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III'), (4, 'Xiaomi T11 Pro'), (5, 'Huawei airpods 4j'), (6, 'Sony Alpha a5000'), (7, 'Xiaomi Mi A3')]
-    You: {"Reasoning": "The Customer is talking about a Sony Alpha model. There are two possible models that fit this criteria ((2, 'Sony Alpha a6000'), (6, 'Sony Alpha a5000'))", "Detection" : "(2, 'Sony Alpha a6000'), (6, 'Sony Alpha a5000')", "Output": "Lack Information"}
+    You: {"Reasoning": "The Customer is talking about a Sony Alpha model. There are two possible models that fit this criteria ((2, 'Sony Alpha a6000'), (6, 'Sony Alpha a5000'))", 
+          "Detection" : "(2, 'Sony Alpha a6000'), (6, 'Sony Alpha a5000')", 
+          "Output": "Lack Information"}
 
     Customer: How much does this Nikon Coolpix camera cost?
     List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III'), (4, 'Xiaomi T11 Pro'), (5, 'Huawei airpods 4j'), (6, 'Sony Alpha a5000'), (7, 'Xiaomi Mi A3')]
-    You: {"Reasoning": "The Customer is talking about a Nikon Coolpix model. There is only one model that fit this criteria ((1, 'Nikon Coolpix S2800'))", "Detection" : "(1, 'Nikon Coolpix S2800')", "Output": "(1, 'Nikon Coolpix S2800')"}
+    You: {"Reasoning": "The Customer is talking about a Nikon Coolpix model. There is only one model that fit this criteria ((1, 'Nikon Coolpix S2800'))", 
+          "Detection" : "(1, 'Nikon Coolpix S2800')", 
+          "Output": "(1, 'Nikon Coolpix S2800')"}
 
     Customer: How much does this device cost?
     List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')]
-    You: {"Reasoning": "The Customer is not explicitely mentioning any model. No model is detected", "Detection" : "None", "Output": "Lack Information"}
+    You: {"Reasoning": "The Customer is not explicitely mentioning any model. No model is detected", 
+          "Detection" : "None", 
+          "Output": "Lack Information"}
     
     Output the answer only in JSON format.
     """
@@ -285,21 +292,28 @@ def model_reasoning_2(elements, statement = ""):
     chat = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0, openai_api_key=openai_api_key)
 
     system_template = """
-    You are a helpful assistant that helps to detect which device model and Product_ID is the customer talking about using the List as reference. If two or more models are detected, output "Lack Information". Be concise, don't give explainations.
+    You are a helpful assistant that helps to detect which device model and Product_ID is the customer talking about using the 
+    List as reference. If two or more models are detected, output "Lack Information". Be concise, don't give explainations.
     
     Here there are some examples that illustrates how can you output your answer. The interactions appear in cronological order:
 
     Customer: How much does this Sony Alpha camera cost?
     List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III'), (4, 'Xiaomi T11 Pro'), (5, 'Huawei airpods 4j'), (6, 'Sony Alpha a5000'), (7, 'Xiaomi Mi A3')]
-    You: {"Reasoning": "The Customer is talking about a Sony Alpha model. There are two possible models that fit this criteria ((2, 'Sony Alpha a6000'), (6, 'Sony Alpha a5000'))", "Detection" : "(2, 'Sony Alpha a6000'), (6, 'Sony Alpha a5000')", "Output": "Lack Information"}
+    You: {"Reasoning": "The Customer is talking about a Sony Alpha model. There are two possible models that fit this criteria ((2, 'Sony Alpha a6000'), (6, 'Sony Alpha a5000'))", 
+          "Detection" : "(2, 'Sony Alpha a6000'), (6, 'Sony Alpha a5000')", 
+          "Output": "Lack Information"}
 
     Customer: How much does this Nikon Coolpix camera cost?
     List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III'), (4, 'Xiaomi T11 Pro'), (5, 'Huawei airpods 4j'), (6, 'Sony Alpha a5000'), (7, 'Xiaomi Mi A3')]
-    You: {"Reasoning": "The Customer is talking about a Nikon Coolpix model. There is only one model that fit this criteria ((1, 'Nikon Coolpix S2800'))", "Detection" : "(1, 'Nikon Coolpix S2800')", "Output": "(1, 'Nikon Coolpix S2800')"}
+    You: {"Reasoning": "The Customer is talking about a Nikon Coolpix model. There is only one model that fit this criteria ((1, 'Nikon Coolpix S2800'))", 
+          "Detection" : "(1, 'Nikon Coolpix S2800')", 
+          "Output": "(1, 'Nikon Coolpix S2800')"}
 
     Customer: How much does this device cost?
     List: [(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')]
-    You: {"Reasoning": "The Customer is not explicitely mentioning any model. No model is detected", "Detection" : "(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')", "Output": "Lack Information"}
+    You: {"Reasoning": "The Customer is not explicitely mentioning any model. No model is detected", 
+          "Detection" : "(1, 'Nikon Coolpix S2800'), (2, 'Sony Alpha a6000'), (3, 'Canon EOS 5D Mark III')", 
+          "Output": "Lack Information"}
     
     Output the answer only in JSON format.
     """
@@ -404,7 +418,7 @@ def take_photo():
         # Wait for a single message from the topic
 
         if PEPPER == True:
-            image = rospy.wait_for_message("/naoqi_driver_node/camera/front/image_raw", Image) #Topic where Pepper publishes images of its camera. 
+            image = rospy.wait_for_message("/naoqi_driver_node/camera/front/image_raw", Image) 
 
         else:
             image = rospy.wait_for_message("/ai4hri/image", Image) 
